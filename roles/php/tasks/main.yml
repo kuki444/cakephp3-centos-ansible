@@ -1,0 +1,31 @@
+- name: phpのインストール
+  become: yes
+  yum:
+    name='php,php-devel,php-mbstring,gd-devel,php-gd,php-intl,php-pdo,php-pgsql,php-dom'
+
+- name: composerがインストールされているか確認
+  command:
+    test -f /bin/composer
+  register:
+    composer_test_vars
+  failed_when: composer_test_vars.rc not in [0, 1]
+  changed_when: false
+
+- name: composerがダウンロード済みか確認
+  command:
+    test -f {{ work_dir }}/composer-setup.php
+  register:
+    composer_src_test_vars
+  failed_when: composer_test_vars.rc not in [0, 1]
+  changed_when: false
+
+- name: get composer
+  get_url: url=https://getcomposer.org/installer  dest={{ work_dir }}/composer-setup.php
+
+- name: install composer
+  shell: chdir={{ work_dir }} php composer-setup.php
+
+- name: move composer.phar
+  shell: mv {{ work_dir }}/composer.phar /bin/composer
+
+

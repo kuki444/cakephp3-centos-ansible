@@ -1,0 +1,2 @@
+[cakephp3-servers]
+localhost ansible_connection=local

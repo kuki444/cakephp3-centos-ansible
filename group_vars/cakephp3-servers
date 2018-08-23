@@ -1,0 +1,35 @@
+# ----------------------------------------------------------------------
+# データベースの cakephp開発/テスト ユーザのパスワード (変更推奨)
+db_passwd_deve_user: test1
+db_passwd_test_user: test2
+# ----------------------------------------------------------------------
+
+# cakephp開発ユーザ
+cakephp_developer: developer
+
+# cakephpDB名
+cakephp_db: test
+
+# cakephpDB開発ユーザ
+
+# cakephpDB開発ユーザ
+cakephp_db_deve_user: test1
+
+# cakephpDBテストユーザ
+cakephp_db_test_user: test2
+
+# cakephpのデプロイ先ディレクトリ
+cakephp_dir: /var/lib/cakephp
+
+# cakephpのバージョン
+cakephp_version: 3.1.2
+
+# cakephp開発のデプロイ先ディレクトリのオーナー:グループ
+cakephp_dir_owner: developer
+cakephp_dir_group: developer
+
+# pg_hba.confのパス
+pg_hba_conf_path: /var/lib/pgsql/data/pg_hba.conf
+
+work_dir: /tmp/cakephp-setup
+

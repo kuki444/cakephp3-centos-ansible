@@ -1,0 +1,36 @@
+- name: cakePHPのソースコードをチェックアウト
+  composer:
+    command: create-project
+    arguments: "cakephp/app:{{ cakephp_version }} {{ cakephp_dir }} "
+    working_dir: "{{ cakephp_dir }}"
+    prefer_dist: yes
+
+- name: composer.jsonの作成 (debug_kitバージョンダウン)
+  become: yes
+  template:
+    src=composer.json
+    dest={{ cakephp_dir }}/composer.json
+    force=no
+
+- name: cakePHPのupdate
+  composer:
+    command: update
+    working_dir: "{{ cakephp_dir }}"
+    prefer_dist: yes
+
+- name: app.phpが存在するか確認
+  command:
+    test -f {{ cakephp_dir }}/config/app.php
+  register:
+    result_test_app_php
+  failed_when: result_test_app_php.rc not in [0, 1]
+  changed_when: false
+
+- name: app.phpの作成
+  become: yes
+  template:
+    src=app.php
+    dest={{ cakephp_dir }}/config/app.php
+    force=no
+
+

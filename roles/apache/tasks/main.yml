@@ -1,0 +1,46 @@
+- name: Apacheとヘッダファイルのインストール
+  become: yes
+  yum:
+    name='httpd,httpd-devel,mod_ssl'
+
+# - name: firewalldでHTTPを許可
+#  become: yes
+#  command: firewall-cmd --zone=public --add-service=http --permanent
+#  when: firewall_state.rc == 0
+
+- name: firewalldでHTTPSを許可
+  become: yes
+  command: firewall-cmd --zone=public --add-service=https --permanent
+  when: firewall_state.rc == 0
+
+- name: firewalldのポリシーをリロード
+  become: yes                                        
+  command: firewall-cmd --reload
+  when: firewall_state.rc == 0
+
+- name: cakephpディレクトリ以下のオーナーを変更
+  become: yes
+  file:
+    path: "{{ cakephp_dir }}"
+    owner: "{{ cakephp_dir_owner }}"
+    group: "{{ cakephp_dir_group }}"
+    recurse: yes
+
+- name: cakephp3.confの作成
+  become: yes
+  template:
+    src=cakephp3.conf
+    dest=/etc/httpd/conf.d/cakephp3.conf
+
+- name: sslproxy.confの作成
+  become: yes
+  template:
+    src=sslproxy.conf
+    dest=/etc/httpd/conf.d/sslproxy.conf
+
+- name: httpdの再起動
+  become: yes
+  service:
+    name=httpd
+    state=restarted
+    enabled=yes

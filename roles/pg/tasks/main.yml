@@ -1,0 +1,78 @@
+- name:  PostgreSQLとヘッダファイルのインストール
+  become: yes
+  yum:
+    name='postgresql-server,postgresql-devel,postgresql-contrib,python-psycopg2'
+
+- name: firewalldでpostgresqlを許可
+  become: yes
+  command: firewall-cmd --zone=public --add-service=postgresql --permanent
+  when: firewall_state.rc == 0
+
+- name: PostgreSQL initdb
+  become: yes
+  command:
+    postgresql-setup initdb
+  register:
+    result
+  failed_when: result.rc not in [0, 1]
+  changed_when: result.rc == 0
+
+- name: pg_hba.confにcakephp用設定が存在するか確認
+  become: yes
+  command:
+    grep test1 {{ pg_hba_conf_path }}
+  register:
+    result_pg_hba
+  failed_when: result_pg_hba.rc not in [0, 1]
+  changed_when: false
+
+- name: pg_hba.conf設定変更用パッチを配置
+  become: yes
+  copy:
+    src=pg_hba_conf.patch
+    dest={{ work_dir }}
+  when:
+    result_pg_hba.rc == 1
+
+- name: pg_hba.confにcakephp用設定を追加
+  become: yes
+  shell:
+    patch -tNp0 {{ pg_hba_conf_path }} < {{ work_dir }}/pg_hba_conf.patch
+  when:
+    result_pg_hba.rc == 1
+
+- name: PostgreSQL起動
+  become: yes
+  service:
+    name=postgresql
+    state=restarted
+    enabled=yes
+
+- name: PostgreSQL ユーザー1作成
+  become: yes
+  become_user: postgres
+  become_method: su
+  postgresql_user:
+    name={{ cakephp_db_deve_user }}
+    password={{ db_passwd_deve_user }}
+
+- name: PostgreSQL ユーザー2作成
+  become: yes
+  become_user: postgres
+  become_method: su
+  postgresql_user:
+    name={{ db_passwd_test_user }}
+    password={{ db_passwd_test_user }}
+
+- name: PostgreSQL データベース1作成
+  become: yes
+  become_user: postgres
+  become_method: su
+  postgresql_db:
+    name={{ cakephp_db }}
+    encoding='UTF-8'
+    lc_collate='ja_JP.UTF-8'
+    lc_ctype='ja_JP.UTF-8'
+    template='template0'
+
+

@@ -1,0 +1,93 @@
+- name: SELinuxの状態確認
+  command:
+    /usr/sbin/selinuxenabled
+  register:
+    result
+  changed_when: false
+  failed_when: result.rc not in [0, 1]
+
+- name: 起動時にSELinux無効化 (/etc/sysconfig/selinux)
+  become: yes
+  selinux: state=disabled
+  when: result.rc == 0
+
+- name: SELinux無効化 (setenforce)
+  become: yes
+  command: setenforce 0
+  when: result.rc == 0
+
+- name: firewalldが起動しているか確認
+  become: yes
+  shell: firewall-cmd --state
+  register: firewall_state
+  ignore_errors: yes
+  changed_when: false
+  check_mode: no
+
+- name: firewalldのポリシーをリロード
+  become: yes                                        
+  command: firewall-cmd --reload
+  when: firewall_state.rc == 0
+
+- name: 開発ツールのインストール
+  become: yes
+  yum: name='@Development Tools'
+
+- name: curlのインストール
+  become: yes
+  yum:
+    name='curl'
+
+- name: yum Repository ius インストール
+  become: yes
+  shell:
+    curl -s https://setup.ius.io | sh
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+  register:
+    result_ius
+  changed_when: false
+  failed_when: result_ius.rc not in [0, 1]
+
+- name: gitのアンインストール
+  become: yes
+  yum:
+    name='git'
+    state=absent
+
+- name: gitのインストール
+  become: yes
+  yum:
+    name='git2u'
+
+- name: yum Repository wandisco インストール
+  become: yes
+  template:
+    src=wandisco.repo
+    dest=/etc/yum.repos.d/wandisco.repo
+    force=no
+
+- name: yum Repository wandisco key インストール
+  rpm_key:
+    key: "http://opensource.wandisco.com/RPM-GPG-KEY-WANdisco"
+
+- name: subversionのインストール
+  become: yes
+  yum: enablerepo=wandisco-svn
+    name='subversion'
+
+- name: ImageMagickとヘッダファイル・日本語フォントのインストール
+  become: yes
+  yum:
+    name='ImageMagick,ImageMagick-devel,ipa-pgothic-fonts'
+
+- name: そのほかのツールのインストール
+  become: yes
+  yum:
+    name='which,wget'
+
+- name: 作業ディレクトリ作成
+  file: path={{ work_dir }}
+    state=directory
+    mode=0755
+
